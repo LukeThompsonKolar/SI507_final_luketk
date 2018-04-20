@@ -10,6 +10,16 @@ pokemon_caching.py creates the cache and database
 pokemon.py runs the interactive program
 pokemon_test.py runs the tests
 
+Class: Condition
+-used in bar command "cond:<stat>[>,=,<]<number>"
+-takes string and checks whether stat, operator, and number are all present
+-val attribute either True or False, used to check validity of command 
+
+Main functions:
+-process_command(): splits command and runs SQL query if the first word is a proper keyword. Returns list that includes the list of tuples, the keyword, and any extra information for the plot.
+-plot(): creates plotly plots of data from process_command depending on the keyword. Will not plot if there is no data.
+-interactive_prompt(): runs the interactive program. Details below.
+
 The interactive program takes in 4 general commands to plot different visualizations.
 -"bar" displays a bar graph
 -"box" displays a boxplot
@@ -52,9 +62,3 @@ Required commands:
 Optional commands: 
 -"type=<type>,<type>,<type>..." for as many boxplots as desired. May also be "type=all" (ex. type=dark,normal,fighting,fire). Default is none.
 Example command: scatter stat=speed type=water,electric
-
-Class: Condition
--used in bar command "cond:<stat>[>,=,<]<number>"
--takes string and checks whether stat, operator, and number are all present
--val attribute either True or False, used to check validity of command 
-
