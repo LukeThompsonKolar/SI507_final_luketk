@@ -142,41 +142,29 @@ char_list = stat_list + ["height","weight"]
 type_list = ["Normal","Fire","Fighting","Water","Flying","Grass","Poison","Electric","Ground","Psychic",
             "Rock","Ice","Bug","Dragon","Ghost","Dark","Steel","Fairy"]
 
-def check_valid_cond(st):
-    try:
-        v2 = False
-        s = st.split(">")
-        for stat in stat_list:
-            if stat == s[0]:
-                v2 = True
-        i = float(s[1])
-        if v2:
-            return(True,s[0],">",i)
-    except:
-        pass
-    try:
-        v2 = False
-        s = st.split("=")
-        for stat in stat_list:
-            if stat in s[0]:
-                v2 = True
-        i = float(s[1])
-        if v2:
-            return(True,s[0],"=",i)
-    except:
-        pass
-    try:
-        v2 = False
-        s = st.split("<")
-        for stat in stat_list:
-            if stat in s[0]:
-                v2 = True
-        i = float(s[1])
-        if v2:
-            return(True,s[0],"<",i)
-    except:
-        pass
-    return([False])
+class Condition:
+    def __init__(self,st):
+        self.stat = None
+        self.con = None
+        self.num = None
+        self.val = False
+        for con in [">","=","<"]:
+            try:
+                v2 = False
+                s = st.split(con)
+                for stat in stat_list:
+                    if stat == s[0]:
+                        v2 = True
+                i = float(s[1])
+                if v2:
+                    self.stat = s[0]
+                    self.con = con
+                    self.num = i
+                    self.val = True
+            except:
+                pass
+    def __str__(self):
+        return("{0.stat}{0.con}{0.num}".format(self))
         
 def check_type(st):
     valid = False
@@ -201,8 +189,6 @@ def top_bottom_clause(com,t_b):
             print('Error. Proper format is "bottom=<limit>"')
     return(lim_comm)
 
-
-
 def bar_command(command):
     where_comm = None
     join_comm = "JOIN Stats ON Pokemon.Name=Stats.PokemonName "
@@ -223,9 +209,9 @@ def bar_command(command):
             val_where = True
             for com in command:
                 if "cond:" in com:
-                    s = check_valid_cond(com.split(":")[1])
-                    if s[0]:
-                        where_comm = "WHERE {}{}{} ".format(s[1],s[2],s[3])
+                    s = Condition(com.split(":")[1])
+                    if s.val:
+                        where_comm = "WHERE {}{}{} ".format(s.stat,s.con,s.num)
                     else:
                         print('Error. Proper format is "cond:<stat>{>,=,<}<number>"')
                         val_where = False
@@ -251,6 +237,7 @@ def bar_command(command):
                         sql_comm += where_comm
 
                     sql_comm += groupby_comm + order_comm + dir_comm + lim_comm
+
                     return(sql_comm,val_stat)
             else:
                 print('Error. Requires "stat=<metric>"')
@@ -310,6 +297,8 @@ def scatter_command(command):
 
                     if where_comm is not None:
                         sql_comm += where_comm
+
+
 
                     return(sql_comm,[types_chosen,val_stat])
             else:
@@ -474,19 +463,9 @@ def process_command(command):
 
     return(c,keyword,extras)
 
-#p = process_command("bar stat=total top=18")
-#p = process_command("scatter type=fire,water stat=attack")
-#p = process_command("scatter stat=attack")
-#p = process_command("scatter type=fire,water,electric,fairy stat=specialattack")
-#p = process_command("hist type=poison density weight")
-
-#p = process_command("box type=all stat=attack")
-
-#print(p)
-
 
 def type_colors(t):
-    col_list = ["rgb(255,218,185)","rgb(255,0,0)","rgb(128,0,0)","rgb(0,0,255)","rgb(0,255,127)","rgb(34,139,34)","rgb(75,0,130)","rgb(255,255,0)","rgb(160,82,45)",
+    col_list = ["rgb(255,160,122)","rgb(255,0,0)","rgb(128,0,0)","rgb(0,0,255)","rgb(0,255,127)","rgb(34,139,34)","rgb(75,0,130)","rgb(255,255,0)","rgb(160,82,45)",
             "rgb(128,0,128)","rgb(139,69,19)","rgb(0,191,255)","rgb(124,252,0)","rgb(255,69,0)","rgb(147,112,219)","rgb(0,0,0)","rgb(112,138,144)","rgb(255,0,255)"]
 
     for i in range(len(type_list)):
@@ -605,7 +584,10 @@ def plot(data,plot_type,extra=None):
         print("No data to plot!")
 
 def interactive_prompt():
-    help_text = "load_help_text()"
+    help_text = '''\nBarplot:\n    REQUIRES: bar stat=<stat>\n    OPTION: cond:<stat>[>,=,<]<number> top=<limit> bottom=<limit>\nBoxplot:\n\
+    REQUIRES: box stat=<metric>\n    OPTION: type=<type>,<type>,<type>.. or type=all\nHistogram:\n    REQUIRES: hist\n    DEFAULT: height count\n\
+    OPTION: type=<type> weight density\nScatterplot:\n    REQUIRES: scatter stat=<stat>\n    OPTION type=<type>,<type>,<type>.. or type=all\n\nTYPE LIST: {0}\n\
+    \nSTAT LIST: {1}\n\nMETRIC LIST: stat list + height and weight\n\nType "exit" to end program.'''.format(", ".join(sorted(type_list)),", ".join(sorted(stat_list)))
     response = ''
     while response != 'exit':
         response = input('Enter a command: ')
@@ -643,8 +625,27 @@ def interactive_prompt():
 
         print("")
 
+#print(Condition("attack>50").val)
+#print(Condition("attack=50").val)
+#print(Condition("attack<50").val)
+#print(Condition("atck<50").val)
+#print(Condition("attack%50").val)
+
+
+#p = process_command("bar stat=total top=18")
+#p = process_command("scatter type=fire,water stat=attack")
+#p = process_command("scatter stat=attack")
+#p = process_command("scatter type=fire,water,electric,fairy stat=specialattack")
+#p = process_command("hist type=poison density weight")
+
+#p = process_command("box type=all stat=attack")
+
+#print(p)
+
+
 if __name__=="__main__":
-    interactive_prompt()
+    #interactive_prompt()
+    print(process_command("bar stat=specialattack cond:speed=150 bottom=5"))
     
 #plot(p[0],"bar")
 #plot(p[0],"scatter",p[1])
